@@ -1,0 +1,25 @@
+server:
+  port: 8080
+  mode: 'release'
+  prefix: "api"
+  white:
+    - "/admin/auth/captcha"
+    - "/admin/auth/login"
+
+database:
+  mysql:
+    host: 192.168.31.10
+    port: 13306
+    user: crud
+    password: J6bKGjBRwJmjhG8Z
+    name: crud
+
+  redis:
+    host: 120.79.190.15
+    port: 16379
+    password: "W%DvYf1YM@albw2i"
+    db: 0
+
+jwt:
+  secret: "tTpHU^rTmmFf@7Fk"
+  expire: 24
