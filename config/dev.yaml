@@ -6,6 +6,9 @@ server:
     - "/admin/auth/captcha"
     - "/admin/auth/login"
 
+log:
+  level: "info"
+
 database:
   mysql:
     host: 192.168.31.10

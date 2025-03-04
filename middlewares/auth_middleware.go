@@ -3,6 +3,7 @@ package middlewares
 import (
 	"m-server-api/config"
 	"m-server-api/utils/jwt"
+	"m-server-api/utils/log"
 	"m-server-api/utils/resp"
 	"net/http"
 	"regexp"
@@ -42,6 +43,7 @@ func authTokenMiddleware(c *gin.Context) {
 	}
 	// 判断是否Bearer开头
 	if len(token) < 7 || token[:7] != "Bearer " {
+		log.Error("用户凭证格式错误")
 		resp.Fail(c, http.StatusUnauthorized, "用户凭证格式错误")
 		c.Abort()
 		return
@@ -49,6 +51,7 @@ func authTokenMiddleware(c *gin.Context) {
 	// 解析token
 	tokenClaims, err := jwt.ParseToken(token[7:])
 	if err != nil {
+		log.Error("用户凭证解析失败", err)
 		resp.Fail(c, http.StatusUnauthorized, "无效的用户凭证")
 		c.Abort()
 		return
@@ -58,6 +61,7 @@ func authTokenMiddleware(c *gin.Context) {
 
 	// 验证平台类型
 	if userInfo.Platform != platformName {
+		log.Error("用户凭证平台类型错误")
 		resp.Fail(c, http.StatusUnauthorized, "无效的用户凭证")
 		c.Abort()
 		return

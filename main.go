@@ -4,11 +4,13 @@ import (
 	"m-server-api/bootstrap"
 	"m-server-api/initializers"
 	"m-server-api/pkg/shutdown"
+	"m-server-api/utils/log"
 
 	_ "m-server-api/modules/admin/routes"
 )
 
 func main() {
+	log.InitLog()
 	// Initialize Db
 	initializers.InitDatabase()
 	// Initialize Gin engine

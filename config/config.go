@@ -11,6 +11,7 @@ import (
 
 type Config struct {
 	Server   ServerConfig   `yaml:"server"`
+	Log      LogConfig      `yaml:"log"`
 	Database DatabaseConfig `yaml:"database"`
 	Jwt      JwtConfig      `yaml:"jwt"`
 }
@@ -20,6 +21,10 @@ type ServerConfig struct {
 	Mode   string   `yaml:"mode"`
 	Prefix string   `yaml:"prefix"`
 	White  []string `yaml:"white"`
+}
+
+type LogConfig struct {
+	Level string `yaml:"level"`
 }
 
 type DatabaseConfig struct {
