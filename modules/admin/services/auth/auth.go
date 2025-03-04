@@ -165,6 +165,7 @@ func MenuTree(userId int64) ([]*menuVo.MenuTree, error) {
 			Alias:    m.Alias,
 			Status:   m.Status,
 			ParentId: m.ParentId,
+			Keep:     m.Keep,
 			Children: []*menuVo.MenuTree{},
 		}
 		menuMap[m.ID] = node

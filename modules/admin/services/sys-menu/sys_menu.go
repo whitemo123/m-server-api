@@ -41,6 +41,7 @@ func Tree(sessionUserInfo jwt.SessionUserInfo) ([]*menuVo.MenuTree, error) {
 			Alias:    m.Alias,
 			Status:   m.Status,
 			ParentId: m.ParentId,
+			Keep:     m.Keep,
 			Children: []*menuVo.MenuTree{},
 		}
 		menuMap[m.ID] = node
@@ -77,6 +78,8 @@ func Create(d *menuDto.CreateDto, sessionUserInfo jwt.SessionUserInfo) (*models.
 	menu.Status = d.Status
 	menu.ParentId = d.ParentId
 
+	menu.Keep = d.Keep
+
 	err := initializers.DB.Save(menu).Error
 	if err != nil {
 		return nil, err
@@ -108,6 +111,9 @@ func Modify(d *menuDto.ModifyDto, sessionUserInfo jwt.SessionUserInfo) (*models.
 	}
 	if d.Alias != "" {
 		menu.Alias = d.Alias
+	}
+	if d.Keep != nil {
+		menu.Keep = d.Keep
 	}
 	menu.UpdateUser = &sessionUserInfo.Id
 

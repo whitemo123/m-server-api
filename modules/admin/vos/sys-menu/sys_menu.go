@@ -10,5 +10,6 @@ type MenuTree struct {
 	Path     string      `json:"path"`
 	Alias    string      `json:"alias"`
 	Status   *int        `json:"status"`
+	Keep     *int        `json:"keep"`
 	Children []*MenuTree `json:"children"`
 }

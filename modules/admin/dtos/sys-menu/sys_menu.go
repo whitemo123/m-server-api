@@ -11,6 +11,7 @@ type CreateDto struct {
 	Icon     string `json:"icon" form:"icon"`
 	Path     string `json:"path" form:"path"`
 	Alias    string `json:"alias" form:"alias"`
+	Keep     *int   `json:"keep" form:"keep"`
 }
 
 type ModifyDto struct {
@@ -21,4 +22,5 @@ type ModifyDto struct {
 	Icon  string `json:"icon" form:"icon"`
 	Path  string `json:"path" form:"path"`
 	Alias string `json:"alias" form:"alias"`
+	Keep  *int   `json:"keep" form:"keep"`
 }

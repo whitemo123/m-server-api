@@ -9,4 +9,5 @@ type SysMenu struct {
 	Icon     string `json:"icon" gorm:"icon"`
 	Path     string `json:"path" gorm:"path"`
 	Alias    string `json:"alias" gorm:"alias"`
+	Keep     *int   `json:"keep" gorm:"keep"`
 }
