@@ -11,6 +11,16 @@ import (
 	"github.com/spf13/cast"
 )
 
+// 角色菜单树形结构
+func RoleMenuTree(c *gin.Context) {
+	menuTree, err := menuService.RoleMenuTree(adminControllers.GetSessionUserInfo(c))
+	if err != nil {
+		resp.Fail(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	resp.Ok(c, menuTree)
+}
+
 // 菜单树形结构
 func Tree(c *gin.Context) {
 	menuTree, err := menuService.Tree(adminControllers.GetSessionUserInfo(c))

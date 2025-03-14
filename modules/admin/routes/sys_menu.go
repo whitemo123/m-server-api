@@ -12,4 +12,5 @@ func init() {
 	menu.POST("/modify", menuController.Modify)
 	menu.GET("/detail/:id", menuController.Detail)
 	menu.GET("/del/:id", menuController.Del)
+	menu.GET("/roleMenuTree", menuController.RoleMenuTree)
 }

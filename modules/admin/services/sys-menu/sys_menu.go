@@ -21,6 +21,52 @@ func sortMenuTree(nodes []*menuVo.MenuTree) {
 	}
 }
 
+func RoleMenuTree(sessionUserInfo jwt.SessionUserInfo) ([]*menuVo.MenuTree, error) {
+	var menuList []models.SysMenu
+
+	db := initializers.DB
+
+	db = db.Where("tenant_id = ? AND status = 1", sessionUserInfo.TenantId)
+
+	err := db.Find(&menuList).Error
+	if err != nil {
+		return nil, err
+	}
+	menuMap := make(map[int64]*menuVo.MenuTree)
+	var roots []*menuVo.MenuTree
+	for _, m := range menuList {
+		node := &menuVo.MenuTree{
+			ID:       m.ID,
+			Name:     m.Name,
+			Sort:     m.Sort,
+			Type:     m.Type,
+			Icon:     m.Icon,
+			Path:     m.Path,
+			Alias:    m.Alias,
+			Status:   m.Status,
+			ParentId: m.ParentId,
+			Keep:     m.Keep,
+
+			Children: []*menuVo.MenuTree{},
+		}
+		menuMap[m.ID] = node
+	}
+	// 构建树形结构
+	for _, node := range menuMap {
+		if node.ParentId == nil {
+			// 一级菜单
+			roots = append(roots, node)
+		} else {
+			// 找到父级，将当前节点挂载到父级的 Children 中
+			if parent, ok := menuMap[*node.ParentId]; ok {
+				parent.Children = append(parent.Children, node)
+			}
+		}
+	}
+	sortMenuTree(roots)
+	return roots, nil
+}
+
 // 全部树形菜单
 func Tree(sessionUserInfo jwt.SessionUserInfo) ([]*menuVo.MenuTree, error) {
 	var menuList []models.SysMenu
@@ -115,6 +161,9 @@ func Modify(d *menuDto.ModifyDto, sessionUserInfo jwt.SessionUserInfo) (*models.
 	if d.Keep != nil {
 		menu.Keep = d.Keep
 	}
+	if d.ParentId != nil {
+		menu.ParentId = d.ParentId
+	}
 	menu.UpdateUser = &sessionUserInfo.Id
 
 	err = initializers.DB.Save(&menu).Error
@@ -136,10 +185,31 @@ func Detail(id int64) (*models.SysMenu, error) {
 
 // 删除
 func Del(id int64) (bool, error) {
-	var menu models.SysMenu
-	err := initializers.DB.Delete(&menu, id).Error
+	// 删除子级菜单和自己
+	var subMenuList []models.SysMenu
+	err := initializers.DB.Raw(`
+		WITH RECURSIVE menu_cte AS (
+			SELECT * FROM sys_menu WHERE id = ?
+			UNION ALL
+			SELECT m.*
+			FROM sys_menu m
+			INNER JOIN menu_cte c ON m.parent_id = c.id
+		)
+		SELECT * FROM menu_cte;
+	`, id).Scan(&subMenuList).Error
 	if err != nil {
 		return false, err
+	}
+	for _, m := range subMenuList {
+		err = initializers.DB.Delete(&m).Error
+		if err != nil {
+			return false, err
+		}
+		// 删除sys_role_menu中的关联
+		err = initializers.DB.Where("menu_id = ?", m.ID).Delete(&models.SysRoleMenu{}).Error
+		if err != nil {
+			return false, err
+		}
 	}
 	return true, nil
 }

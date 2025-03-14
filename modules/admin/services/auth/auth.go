@@ -104,6 +104,14 @@ func Login(dto authDto.LoginDto) (*authVo.LoginVo, error) {
 		return nil, err
 	}
 
+	// 存储token到redis
+	initializers.RDB.Set(
+		initializers.Ctx,
+		"admin-token:"+cast.ToString(user.BaseModel.ID),
+		token,
+		time.Duration(cast.ToInt(config.Get().Jwt.Expire))*time.Hour,
+	)
+
 	// 销毁验证码
 	initializers.RDB.Del(initializers.Ctx, "captcha:"+dto.CaptchaId)
 
@@ -186,6 +194,7 @@ func MenuTree(userId int64) ([]*menuVo.MenuTree, error) {
 	return roots, nil
 }
 
+// 修改密码
 func ChangePassword(dto authDto.ChangePasswordDto, userId int64) error {
 	var user models.SysUser
 	err := initializers.DB.Where("id = ?", userId).First(&user).Error
@@ -195,6 +204,13 @@ func ChangePassword(dto authDto.ChangePasswordDto, userId int64) error {
 	if user.Password != md5Encrypt.Encode(dto.Password) {
 		return errors.New("原密码不正确")
 	}
+	initializers.RDB.Del(initializers.Ctx, "admin-token:"+cast.ToString(userId))
 	err = initializers.DB.Model(&models.SysUser{}).Where("id = ?", userId).Update("password", md5Encrypt.Encode(dto.NewPassword)).Error
+	return err
+}
+
+// 退出登录
+func Logout(userId int64) error {
+	err := initializers.RDB.Del(initializers.Ctx, "admin-token:"+cast.ToString(userId)).Err()
 	return err
 }

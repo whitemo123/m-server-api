@@ -12,4 +12,5 @@ func init() {
 	auth.GET("/userInfo", authController.UserInfo)
 	auth.GET("/menuTree", authController.MenuTree)
 	auth.POST("changePwd", authController.ChangePassword)
+	auth.POST("logout", authController.Logout)
 }

@@ -6,9 +6,11 @@ import (
 	"m-server-api/modules/admin/dtos"
 	userDto "m-server-api/modules/admin/dtos/sys-user"
 	"m-server-api/modules/admin/models"
+	userVo "m-server-api/modules/admin/vos/sys-user"
 	md5Encrypt "m-server-api/utils/encrypt/md5"
 	"m-server-api/utils/jwt"
 
+	"github.com/jinzhu/copier"
 	"github.com/spf13/cast"
 )
 
@@ -100,13 +102,27 @@ func Modify(d *userDto.ModifyDto, sessionUserInfo jwt.SessionUserInfo) (*models.
 }
 
 // 详情
-func Detail(id int64) (*models.SysUser, error) {
+func Detail(id int64) (*userVo.SysUserVo, error) {
 	var user models.SysUser
 	err := initializers.DB.First(&user, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &user, nil
+	var sysUserVo userVo.SysUserVo
+	copier.Copy(&sysUserVo, &user)
+
+	var sysUserRoles []models.SysUserRole
+	err = initializers.DB.Where("user_id = ?", id).Find(&sysUserRoles).Error
+	if err != nil {
+		return nil, err
+	}
+	var roleIds []string
+	for _, sysUserRole := range sysUserRoles {
+		roleIds = append(roleIds, cast.ToString(sysUserRole.RoleId))
+	}
+
+	sysUserVo.RoleIdList = roleIds
+	return &sysUserVo, nil
 }
 
 // 删除
@@ -120,7 +136,7 @@ func Del(id int64) (bool, error) {
 }
 
 // 列表查询
-func List(query userDto.ListDto, sessionUserInfo jwt.SessionUserInfo) ([]models.SysUser, error) {
+func List(query userDto.ListDto, sessionUserInfo jwt.SessionUserInfo) ([]userVo.SysUserVo, error) {
 	var users []models.SysUser
 
 	// 查询条件
@@ -134,9 +150,11 @@ func List(query userDto.ListDto, sessionUserInfo jwt.SessionUserInfo) ([]models.
 
 	err := db.Find(&users).Error
 	if err != nil {
-		return []models.SysUser{}, err
+		return nil, err
 	}
-	return users, nil
+	var res []userVo.SysUserVo
+	copier.Copy(&res, &users)
+	return res, nil
 }
 
 // 导出excel
@@ -179,6 +197,17 @@ func Page(query userDto.PageDto, sessionUserInfo jwt.SessionUserInfo) (*dtos.Pag
 		db = db.Where("status = ?", query.Status)
 	}
 
+	if query.User != "" {
+		db = db.Where("account LIKE ? OR name LIKE ? OR id like ?", "%"+query.User+"%", "%"+query.User+"%", "%"+query.User+"%")
+	}
+
+	if query.CreateTimeStart != "" {
+		db = db.Where("create_time >= ?", query.CreateTimeStart)
+	}
+	if query.CreateTimeEnd != "" {
+		db = db.Where("create_time <= ?", query.CreateTimeEnd)
+	}
+
 	offset := (p - 1) * l
 
 	var total int64
@@ -191,10 +220,13 @@ func Page(query userDto.PageDto, sessionUserInfo jwt.SessionUserInfo) (*dtos.Pag
 		return nil, err
 	}
 
+	var res []userVo.SysUserVo
+	copier.Copy(&res, &users)
+
 	return &dtos.PageRes{
 		Total: total,
 		Page:  p,
 		Limit: l,
-		List:  users,
+		List:  res,
 	}, nil
 }

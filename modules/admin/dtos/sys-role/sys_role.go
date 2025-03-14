@@ -22,4 +22,8 @@ type ListDto struct {
 type PageDto struct {
 	dtos.Page
 	Status *int `json:"status" form:"status"`
+
+	Role            string `json:"role" form:"role"`
+	CreateTimeStart string `json:"createTimeStart" form:"createTimeStart"`
+	CreateTimeEnd   string `json:"createTimeEnd" form:"createTimeEnd"`
 }

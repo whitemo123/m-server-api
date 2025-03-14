@@ -6,8 +6,10 @@ import (
 	"m-server-api/modules/admin/dtos"
 	roleDto "m-server-api/modules/admin/dtos/sys-role"
 	"m-server-api/modules/admin/models"
+	roleVo "m-server-api/modules/admin/vos/sys-role"
 	"m-server-api/utils/jwt"
 
+	"github.com/jinzhu/copier"
 	"github.com/spf13/cast"
 )
 
@@ -94,13 +96,27 @@ func Modify(d *roleDto.ModifyDto, sessionUserInfo jwt.SessionUserInfo) (*models.
 }
 
 // 详情
-func Detail(id int64) (*models.SysRole, error) {
+func Detail(id int64) (*roleVo.SysRoleVo, error) {
 	var role models.SysRole
 	err := initializers.DB.First(&role, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &role, nil
+	var roleVo roleVo.SysRoleVo
+	copier.Copy(&roleVo, &role)
+
+	var roleMenus []models.SysRoleMenu
+	err = initializers.DB.Where("role_id = ?", id).Find(&roleMenus).Error
+	if err != nil {
+		return nil, err
+	}
+	var menuIds []string
+	for _, roleMenu := range roleMenus {
+		menuIds = append(menuIds, cast.ToString(roleMenu.MenuId))
+	}
+	roleVo.MenuIdList = menuIds
+
+	return &roleVo, nil
 }
 
 // 删除
@@ -141,6 +157,17 @@ func Page(query roleDto.PageDto, sessionUserInfo jwt.SessionUserInfo) (*dtos.Pag
 	db = db.Where("tenant_id = ?", sessionUserInfo.TenantId)
 	if query.Status != nil {
 		db = db.Where("status = ?", query.Status)
+	}
+
+	if query.Role != "" {
+		db = db.Where("role_name LIKE ? OR id like ?", "%"+query.Role+"%", "%"+query.Role+"%")
+	}
+
+	if query.CreateTimeStart != "" {
+		db = db.Where("create_time >= ?", query.CreateTimeStart)
+	}
+	if query.CreateTimeEnd != "" {
+		db = db.Where("create_time <= ?", query.CreateTimeEnd)
 	}
 
 	db = db.Order("create_time desc")

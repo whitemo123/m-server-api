@@ -26,4 +26,9 @@ type ListDto struct {
 type PageDto struct {
 	dtos.Page
 	Status *int `json:"status" form:"status"`
+	// ID/用户名/昵称
+	User string `json:"user" form:"user"`
+	// 创建时间范围查询
+	CreateTimeStart string `json:"createTimeStart" form:"createTimeStart"`
+	CreateTimeEnd   string `json:"createTimeEnd" form:"createTimeEnd"`
 }

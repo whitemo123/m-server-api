@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"m-server-api/config"
+	"m-server-api/initializers"
 	"m-server-api/utils/jwt"
 	"m-server-api/utils/log"
 	"m-server-api/utils/resp"
@@ -10,6 +11,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
+	"github.com/spf13/cast"
 )
 
 // isWhite 是否白名单
@@ -62,6 +65,28 @@ func authTokenMiddleware(c *gin.Context) {
 	// 验证平台类型
 	if userInfo.Platform != platformName {
 		log.Error("用户凭证平台类型错误")
+		resp.Fail(c, http.StatusUnauthorized, "无效的用户凭证")
+		c.Abort()
+		return
+	}
+
+	// 从redis中获取token进行对比
+	var redisToken string
+	redisToken, err = initializers.RDB.Get(initializers.Ctx, "admin-token:"+cast.ToString(userInfo.Id)).Result()
+	if err != nil {
+		if err == redis.Nil {
+			log.Error("redis未找到" + cast.ToString(userInfo.Id) + "的token")
+			resp.Fail(c, http.StatusUnauthorized, "无效的用户凭证")
+			c.Abort()
+			return
+		}
+		log.Error("redis获取token失败：" + err.Error())
+		resp.Fail(c, http.StatusUnauthorized, "无效的用户凭证")
+		c.Abort()
+		return
+	}
+	if token[7:] != redisToken {
+		log.Error("redis存储token与用户凭证不一致")
 		resp.Fail(c, http.StatusUnauthorized, "无效的用户凭证")
 		c.Abort()
 		return
